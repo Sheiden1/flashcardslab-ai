@@ -6,8 +6,8 @@ Aplicação web para gerar flashcards automaticamente usando IA (Google Gemini).
 
 - ✅ Geração de flashcards a partir de texto
 - ✅ Geração de flashcards a partir de URLs
-- ✅ Upload de PDF (em desenvolvimento)
-- ✅ Upload de documentos (em desenvolvimento)
+- ✅ Upload de PDF (em desenvolvimento) FUNCIONAL 
+- ✅ Upload de documentos (em desenvolvimento) FUNCIONAL 
 - ✅ Interface minimalista e profissional
 - ✅ Flashcards com animação 3D flip
 
