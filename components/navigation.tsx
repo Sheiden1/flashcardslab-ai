@@ -1,4 +1,4 @@
-"use client"
+"use client" // important thing
 
 export function Navigation() {
   return (
