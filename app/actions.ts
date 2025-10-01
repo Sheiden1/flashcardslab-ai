@@ -75,7 +75,7 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
   try {
     console.log("[v0] Fetching content from URL:", url)
 
-    // First, fetch the content from the URL
+    // buscar conteúdo da url
     const response = await fetch(url)
     if (!response.ok) {
       throw new Error("Não foi possível acessar a URL")
@@ -83,14 +83,14 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
 
     const html = await response.text()
 
-    // Extract text content (basic extraction)
+    // Extração basica do txt
     const textContent = html
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 10000) // Limit to first 10k characters
+      .slice(0, 10000) // Limitar até 10k caracteres
 
     if (!textContent || textContent.length < 100) {
       throw new Error("Não foi possível extrair conteúdo suficiente da URL")
@@ -98,7 +98,7 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
 
     console.log("[v0] Extracted text content, length:", textContent.length)
 
-    // Generate flashcards from the extracted text
+    // GGerar flashcards do txt extraido
     return await generateFlashcardsFromText(textContent)
   } catch (error) {
     console.error("[v0] Error generating flashcards from URL:", error)
