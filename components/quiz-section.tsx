@@ -1,4 +1,4 @@
-"use client"
+"use client" // important thing
 
 import { useState } from "react"
 import { Card } from "@/components/ui/card"
