@@ -2,10 +2,15 @@
 
 import { generateText } from "ai"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyApwBnK6P1cfudGg6nnrudr_cYdIIPereo",
 })
+
+const genAI = new GoogleGenerativeAI(
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY || "AIzaSyApwBnK6P1cfudGg6nnrudr_cYdIIPereo",
+)
 
 export interface Flashcard {
   id: string
@@ -103,20 +108,13 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
 
 export async function generateFlashcardsFromPdf(base64Content: string): Promise<Flashcard[]> {
   try {
-    console.log("[v0] Processing PDF content, base64 length:", base64Content.length)
+    console.log("[v0] Processing PDF with Gemini, base64 length:", base64Content.length)
 
-    // Since PDFs can be complex, we'll treat them as documents and extract text
-    const { text: response } = await generateText({
-      model: google("gemini-2.0-flash-exp"),
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Você é um assistente especializado em criar flashcards educacionais de alta qualidade.
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
 
-Analise o conteúdo do documento PDF fornecido e crie flashcards para ajudar no estudo e memorização do conteúdo.
+    const prompt = `Você é um assistente especializado em criar flashcards educacionais de alta qualidade.
+
+Analise o documento PDF fornecido e crie flashcards para ajudar no estudo e memorização do conteúdo.
 
 INSTRUÇÕES:
 - Crie entre 6 a 12 flashcards dependendo da quantidade de conteúdo
@@ -132,18 +130,19 @@ FORMATO DE RESPOSTA (JSON):
     "question": "Pergunta aqui?",
     "answer": "Resposta aqui."
   }
-]`,
-            },
-            {
-              type: "image",
-              image: base64Content,
-              mimeType: "application/pdf",
-            },
-          ],
-        },
-      ],
-    })
+]`
 
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Content,
+          mimeType: "application/pdf",
+        },
+      },
+    ])
+
+    const response = result.response.text()
     console.log("[v0] Received response from Gemini for PDF")
 
     const jsonMatch = response.match(/\[[\s\S]*\]/)
