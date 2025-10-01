@@ -1,4 +1,4 @@
-"use client"
+"use client"  // important thing //
 
 import { Flashcard } from "./flashcard"
 
