@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { Suspense } from "react"
+import { LanguageProvider } from "@/lib/language-context"
 
 export const metadata: Metadata = {
   title: "FlashcardsLab – Aprendizado Rápido com Flashcards Inteligentes",
@@ -20,7 +21,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
+        <LanguageProvider>
+          <Suspense fallback={null}>{children}</Suspense>
+        </LanguageProvider>
         <Analytics />
       </body>
     </html>
