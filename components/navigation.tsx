@@ -21,22 +21,27 @@ export function Navigation() {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 text-gray-300 hover:text-white">
+              <Button variant="ghost" size="sm" className="gap-2 text-gray-300 hover:text-white hover:bg-white/10">
                 <Globe className="w-4 h-4" />
                 <span className="hidden sm:inline">{language === "pt" ? "Português" : "English"}</span>
                 <span className="sm:hidden">{language.toUpperCase()}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="bg-card border-white/10">
+            <DropdownMenuContent
+              align="end"
+              className="bg-card/95 backdrop-blur-sm border-white/10"
+              sideOffset={8}
+              alignOffset={-4}
+            >
               <DropdownMenuItem
                 onClick={() => setLanguage("pt")}
-                className={`cursor-pointer ${language === "pt" ? "bg-primary/10 text-primary" : "text-gray-300"}`}
+                className={`cursor-pointer ${language === "pt" ? "bg-primary/10 text-primary" : "text-gray-300 hover:text-white hover:bg-white/5"}`}
               >
                 🇧🇷 Português (BR)
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setLanguage("en")}
-                className={`cursor-pointer ${language === "en" ? "bg-primary/10 text-primary" : "text-gray-300"}`}
+                className={`cursor-pointer ${language === "en" ? "bg-primary/10 text-primary" : "text-gray-300 hover:text-white hover:bg-white/5"}`}
               >
                 🇺🇸 English
               </DropdownMenuItem>

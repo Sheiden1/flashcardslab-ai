@@ -64,20 +64,18 @@ ${text}`,
 
     return parseFlashcardsResponse(response)
   } catch (error) {
-    console.error("[v0] Error generating flashcards:", error)
+    console.error("Error generating flashcards:", error)
     throw new Error("Erro ao gerar flashcards. Por favor, tente novamente.")
   }
 }
 
 export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[]> {
   try {
-    // Validate URL format
     const urlObj = new URL(url)
     if (!urlObj.protocol.startsWith("http")) {
       throw new Error("URL deve começar com http:// ou https://")
     }
 
-    // Fetch content from URL
     const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; FlashcardsBot/1.0)",
@@ -90,7 +88,6 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
 
     const html = await response.text()
 
-    // Extract text content with improved cleaning
     const textContent = html
       .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
       .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "")
@@ -105,15 +102,13 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
       throw new Error("Não foi possível extrair conteúdo suficiente da URL")
     }
 
-    // Limit content to avoid token limits
     const limitedContent = textContent.slice(0, 15000)
-
     return await generateFlashcardsFromText(limitedContent)
   } catch (error) {
     if (error instanceof TypeError && error.message.includes("Invalid URL")) {
       throw new Error("URL inválida. Por favor, insira uma URL válida.")
     }
-    console.error("[v0] Error generating flashcards from URL:", error)
+    console.error("Error generating flashcards from URL:", error)
     throw new Error(
       error instanceof Error ? error.message : "Erro ao processar URL. Verifique se a URL é válida e acessível.",
     )
@@ -122,31 +117,50 @@ export async function generateFlashcardsFromUrl(url: string): Promise<Flashcard[
 
 export async function generateFlashcardsFromPdf(base64Content: string): Promise<Flashcard[]> {
   try {
-    // Validate base64 size (rough estimate: base64 is ~1.33x original size)
     const estimatedSizeInMB = (base64Content.length * 0.75) / (1024 * 1024)
-    if (estimatedSizeInMB > 10) {
-      throw new Error("Arquivo muito grande. Por favor, use um PDF menor que 10MB.")
+
+    if (estimatedSizeInMB > 3) {
+      throw new Error("Arquivo muito grande. Por favor, use um PDF menor que 2MB.")
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" })
 
-    const result = await model.generateContent([
-      FLASHCARD_PROMPT,
-      {
-        inlineData: {
-          data: base64Content,
-          mimeType: "application/pdf",
+    const result = (await Promise.race([
+      model.generateContent([
+        FLASHCARD_PROMPT,
+        {
+          inlineData: {
+            data: base64Content,
+            mimeType: "application/pdf",
+          },
         },
-      },
-    ])
+      ]),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout ao processar PDF. Tente um arquivo menor.")), 45000),
+      ),
+    ])) as any
 
     const response = result.response.text()
     return parseFlashcardsResponse(response)
   } catch (error) {
-    console.error("[v0] Error generating flashcards from PDF:", error)
-    if (error instanceof Error && error.message.includes("muito grande")) {
-      throw error
+    console.error("Error generating flashcards from PDF:", error)
+
+    if (error instanceof Error) {
+      if (error.message.includes("muito grande") || error.message.includes("Timeout")) {
+        throw error
+      }
+      if (
+        error.message.includes("quota") ||
+        error.message.includes("limit") ||
+        error.message.includes("RESOURCE_EXHAUSTED")
+      ) {
+        throw new Error("Limite de uso da API atingido. Por favor, tente novamente mais tarde.")
+      }
+      if (error.message.includes("invalid") || error.message.includes("malformed")) {
+        throw new Error("Arquivo PDF inválido ou corrompido. Tente outro arquivo.")
+      }
     }
-    throw new Error("Erro ao processar PDF. Por favor, tente novamente com um arquivo menor.")
+
+    throw new Error("Erro ao processar PDF. Por favor, tente novamente com um arquivo menor (máximo 2MB).")
   }
 }

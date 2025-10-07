@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, Link2, Type, Loader2 } from "lucide-react"
+import { FileText, Link2, Type, Loader2, ExternalLink } from "lucide-react"
 import { generateFlashcardsFromText, generateFlashcardsFromUrl, generateFlashcardsFromPdf } from "@/app/actions"
 import type { Flashcard } from "@/app/actions"
 import { useLanguage } from "@/lib/language-context"
@@ -17,7 +17,7 @@ interface ImportOptionsSectionProps {
   onContentStored: (content: { type: string; data: string }) => void
 }
 
-const MAX_FILE_SIZE_MB = 20
+const MAX_FILE_SIZE_MB = 2
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
 export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }: ImportOptionsSectionProps) {
@@ -27,6 +27,7 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
   const [textInput, setTextInput] = useState("")
   const [urlInput, setUrlInput] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [uploadProgress, setUploadProgress] = useState<string>("")
 
   const scrollToResults = useCallback(() => {
     setTimeout(() => {
@@ -77,6 +78,7 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
     if (!file) return
 
     setError(null)
+    setUploadProgress("")
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setError(t.errorFileSize)
@@ -88,15 +90,38 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
 
     try {
       if (file.type === "application/pdf") {
-        const arrayBuffer = await file.arrayBuffer()
-        const bytes = new Uint8Array(arrayBuffer)
-        let binary = ""
-        const chunkSize = 8192
-        for (let i = 0; i < bytes.byteLength; i += chunkSize) {
-          const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.byteLength))
-          binary += String.fromCharCode.apply(null, Array.from(chunk))
-        }
-        const base64 = btoa(binary)
+        setUploadProgress(t.processing || "Processando arquivo...")
+
+        const reader = new FileReader()
+
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => {
+            try {
+              const arrayBuffer = reader.result as ArrayBuffer
+              const bytes = new Uint8Array(arrayBuffer)
+              const chunks: string[] = []
+              const chunkSize = 8192
+
+              for (let i = 0; i < bytes.byteLength; i += chunkSize) {
+                const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.byteLength))
+                chunks.push(String.fromCharCode(...Array.from(chunk)))
+              }
+
+              const binary = chunks.join("")
+              const base64 = btoa(binary)
+              resolve(base64)
+            } catch (err) {
+              reject(new Error("Erro ao processar PDF. Tente um arquivo menor."))
+            }
+          }
+
+          reader.onerror = () => reject(new Error("Erro ao ler o arquivo"))
+        })
+
+        reader.readAsArrayBuffer(file)
+        const base64 = await base64Promise
+
+        setUploadProgress(t.generating || "Gerando flashcards...")
 
         const flashcards = await generateFlashcardsFromPdf(base64)
         onFlashcardsGenerated(flashcards)
@@ -112,10 +137,10 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
         setError(t.errorFileType)
       }
     } catch (err) {
-      console.error("[v0] Error processing file:", err)
-      setError(err instanceof Error ? err.message : "Erro ao processar arquivo")
+      setError(err instanceof Error ? err.message : "Erro ao processar arquivo.")
     } finally {
       setIsLoading(false)
+      setUploadProgress("")
       event.target.value = ""
     }
   }
@@ -172,6 +197,19 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
                   <p className="text-gray-400 mb-2">{t.pdfUploadText}</p>
                   <p className="text-sm text-gray-500">{t.pdfUploadHint}</p>
                 </label>
+
+                <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                  <p className="text-sm text-gray-400 mb-3">{t.compressHint}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full border-primary/30 text-primary hover:bg-primary/10 hover:text-primary bg-transparent"
+                    onClick={() => window.open("https://www.ilovepdf.com/compress_pdf", "_blank")}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    {t.compressButton}
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 
@@ -189,6 +227,15 @@ export function ImportOptionsSection({ onFlashcardsGenerated, onContentStored }:
               </div>
             </TabsContent>
           </Tabs>
+
+          {uploadProgress && (
+            <div className="mt-4 p-4 bg-primary/10 border border-primary/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-primary text-sm flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {uploadProgress}
+              </p>
+            </div>
+          )}
 
           {error && (
             <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg animate-in fade-in slide-in-from-top-2 duration-300">
