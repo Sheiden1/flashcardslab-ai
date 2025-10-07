@@ -19,7 +19,7 @@ export function Navigation() {
             <span className="text-xl font-bold text-white">{t.brand}</span>
           </div>
 
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2 text-gray-300 hover:text-white hover:bg-white/10">
                 <Globe className="w-4 h-4" />
@@ -29,7 +29,7 @@ export function Navigation() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="bg-card/95 backdrop-blur-sm border-white/10"
+              className="bg-card/95 backdrop-blur-sm border-white/10 z-[100]"
               sideOffset={8}
               alignOffset={-4}
             >
