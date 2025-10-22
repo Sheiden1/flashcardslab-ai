@@ -1,6 +1,6 @@
 # FlashcardsLab - Gerador de Flashcards com IA
 
-Aplicação web para gerar flashcards automaticamente usando IA (Google Gemini).
+Aplicação para gerar flashcards automaticamente usando IA 
 
 ## Funcionalidades
 
