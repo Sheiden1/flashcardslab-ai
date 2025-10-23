@@ -17,6 +17,4 @@ Aplicação para gerar flashcards automaticamente usando IA
 - React
 - TypeScript
 - Tailwind CSS v4
-- AI SDK (Vercel)
 - Google Gemini API
-- shadcn/ui
